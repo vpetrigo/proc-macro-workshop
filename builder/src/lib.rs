@@ -1,12 +1,13 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
+use proc_macro2::Ident;
 use quote::quote;
 use syn::parse_macro_input;
+use syn::spanned::Spanned;
 use syn::DeriveInput;
-use proc_macro2::Ident;
 
-#[proc_macro_derive(Builder)]
+#[proc_macro_derive(Builder, attributes(builder))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
     let struct_name: &Ident = &ast.ident;
