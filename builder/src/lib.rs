@@ -77,7 +77,17 @@ fn type_of(type_name: &str, ty: &syn::Type) -> bool {
     }
 }
 
-fn get_option_inner_type(ty: &syn::Type) -> Option<&syn::Type> {
+fn is_builder_field(field: &syn::Field) -> bool {
+    for attr in &field.attrs {
+        if attr.path.segments.len() != 0 && attr.path.segments[0].ident == "builder" {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn get_inner_type(ty: &syn::Type) -> Option<&syn::Type> {
     if let syn::Type::Path(syn::TypePath {
         path: syn::Path { segments, .. },
         ..
