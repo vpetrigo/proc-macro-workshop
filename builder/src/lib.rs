@@ -115,6 +115,27 @@ fn get_inner_type(ty: &syn::Type) -> Option<&syn::Type> {
     None
 }
 
+fn get_builder_attr(field: &syn::Field) -> Option<syn::Ident> {
+    if is_builder_field(field) && field.attrs.len() > 0 {
+        for attr in &field.attrs {
+            match attr.parse_meta() {
+                Ok(syn::Meta::List(list)) => {
+                    if let syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
+                        lit: syn::Lit::Str(ref litstr),
+                        ..
+                    })) = list.nested[0]
+                    {
+                        return Some(syn::Ident::new(litstr.value().as_str(), field.span()));
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+
+    None
+}
+
 fn generate_fun_internal(name: &Option<syn::Ident>) -> proc_macro2::TokenStream {
     quote! {
         self.#name = Some(#name);
