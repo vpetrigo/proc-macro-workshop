@@ -151,17 +151,35 @@ fn generate_builder_functions<'a, P>(
         let ty = &field.ty;
         let test = generate_fun_internal(name);
 
-        if type_of("Option", ty) {
-            let inner_type = get_option_inner_type(ty);
-            quote! {
-                fn #name(&mut self, #name: #inner_type) -> &mut Self {
-                    #test
+        if type_of("Option", ty) || is_builder_field(field) {
+            let inner_type = get_inner_type(ty);
+            let attr_name = get_builder_attr(field);
+            let tt_name = if attr_name.is_some() {
+                &attr_name
+            } else {
+                &name
+            };
+
+            if is_builder_field(field) {
+                quote! {
+                    fn #tt_name(&mut self, #tt_name: #inner_type) -> &mut Self {
+                        self.#name.push(#tt_name);
+                        self
+                    }
+                }
+            } else {
+                quote! {
+                    fn #tt_name(&mut self, #tt_name: #inner_type) -> &mut Self {
+                        #test
+                    }
                 }
             }
         } else {
+            let func_inner = generate_fun_internal(name);
+
             quote! {
                 fn #name(&mut self, #name: #ty) -> &mut Self {
-                    #test
+                    #func_inner
                 }
             }
         }
