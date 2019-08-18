@@ -231,7 +231,7 @@ fn generate_constructor_fields<'a, P>(
         let name = &field.ident;
         let ty = &field.ty;
 
-        if type_of("Option", ty) {
+        if type_of("Option", ty) || is_builder_field(field) {
             quote! {
                 #name: self.#name.clone()
             }
