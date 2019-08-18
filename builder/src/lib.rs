@@ -149,37 +149,31 @@ fn generate_builder_functions<'a, P>(
     fields.iter().map(|field| {
         let name = &field.ident;
         let ty = &field.ty;
-        let test = generate_fun_internal(name);
+        let fun_internal = generate_fun_internal(name);
 
         if type_of("Option", ty) || is_builder_field(field) {
             let inner_type = get_inner_type(ty);
-            let attr_name = get_builder_attr(field);
-            let tt_name = if attr_name.is_some() {
-                &attr_name
-            } else {
-                &name
-            };
 
             if is_builder_field(field) {
+                let attr_name = get_builder_attr(field);
+
                 quote! {
-                    fn #tt_name(&mut self, #tt_name: #inner_type) -> &mut Self {
-                        self.#name.push(#tt_name);
+                    fn #attr_name(&mut self, #attr_name: #inner_type) -> &mut Self {
+                        self.#name.push(#attr_name);
                         self
                     }
                 }
             } else {
                 quote! {
-                    fn #tt_name(&mut self, #tt_name: #inner_type) -> &mut Self {
-                        #test
+                    fn #name(&mut self, #name: #inner_type) -> &mut Self {
+                        #fun_internal
                     }
                 }
             }
         } else {
-            let func_inner = generate_fun_internal(name);
-
             quote! {
                 fn #name(&mut self, #name: #ty) -> &mut Self {
-                    #func_inner
+                    #fun_internal
                 }
             }
         }
