@@ -192,8 +192,14 @@ fn generate_emtpy_fields<'a, P>(
     fields.iter().map(|field| {
         let name = &field.ident;
 
-        quote! {
-        #name: None
+        if is_builder_field(field) {
+            quote! {
+                #name: std::vec::Vec::new()
+            }
+        } else {
+            quote! {
+                #name: std::option::Option::None
+            }
         }
     })
 }
