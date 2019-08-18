@@ -210,7 +210,7 @@ fn generate_builder_fields<'a, P>(
     fields.iter().map(|field| {
         let name = &field.ident;
         let ty = &field.ty;
-        let optional = if type_of("Option", ty) {
+        let optional = if type_of("Option", ty) || is_builder_field(field) {
             quote! {
                 #name: #ty
             }
