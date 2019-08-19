@@ -35,9 +35,9 @@ pub fn derive(input: TokenStream) -> TokenStream {
         impl #struct_builder {
             #(#methods)*
 
-            pub fn build(&mut self) -> Result<#struct_name, Box<dyn std::error::Error>> {
+            pub fn build(&mut self) -> std::result::Result<#struct_name, std::boxed::Box<dyn std::error::Error>> {
                 // ..
-                Ok(#struct_name {
+                std::result::Result::Ok(#struct_name {
                     #(#constructor_fields),*
                 })
             }
@@ -169,7 +169,7 @@ fn get_builder_attr(field: &syn::Field) -> Option<BuilderAttr> {
 
 fn generate_fun_internal(name: &Option<syn::Ident>) -> proc_macro2::TokenStream {
     quote! {
-        self.#name = Some(#name);
+        self.#name = std::option::Option::Some(#name);
         self
     }
 }
@@ -247,7 +247,7 @@ fn generate_builder_fields<'a, P>(
             }
         } else {
             quote! {
-                #name: Option<#ty>
+                #name: std::option::Option<#ty>
             }
         };
 
