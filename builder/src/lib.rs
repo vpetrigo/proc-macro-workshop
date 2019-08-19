@@ -115,17 +115,48 @@ fn get_inner_type(ty: &syn::Type) -> Option<&syn::Type> {
     None
 }
 
-fn get_builder_attr(field: &syn::Field) -> Option<syn::Ident> {
+enum BuilderAttr {
+    Ok(syn::Ident),
+    Err(proc_macro2::TokenStream),
+}
+
+fn get_builder_attr(field: &syn::Field) -> Option<BuilderAttr> {
     if is_builder_field(field) && field.attrs.len() > 0 {
         for attr in &field.attrs {
             match attr.parse_meta() {
                 Ok(syn::Meta::List(list)) => {
+                    assert!(
+                        list.path
+                            .segments
+                            .iter()
+                            .any(|segment| segment.ident == "builder"),
+                        "Does not have #[builder]"
+                    );
+
+                    if list.nested.len() != 1 {
+                        return Some(BuilderAttr::Err(
+                            syn::Error::new_spanned(list, "expected `builder(each = \"...\")`")
+                                .to_compile_error(),
+                        ));
+                    }
+
                     if let syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
+                        path: syn::Path { ref segments, .. },
                         lit: syn::Lit::Str(ref litstr),
                         ..
                     })) = list.nested[0]
                     {
-                        return Some(syn::Ident::new(litstr.value().as_str(), field.span()));
+                        if segments[0].ident != "each" {
+                            return Some(BuilderAttr::Err(
+                                syn::Error::new_spanned(list, "expected `builder(each = \"...\")`")
+                                    .to_compile_error(),
+                            ));
+                        }
+
+                        return Some(BuilderAttr::Ok(syn::Ident::new(
+                            litstr.value().as_str(),
+                            field.span(),
+                        )));
                     }
                 }
                 _ => (),
@@ -157,11 +188,17 @@ fn generate_builder_functions<'a, P>(
             if is_builder_field(field) {
                 let attr_name = get_builder_attr(field);
 
-                quote! {
-                    fn #attr_name(&mut self, #attr_name: #inner_type) -> &mut Self {
-                        self.#name.push(#attr_name);
-                        self
-                    }
+                match attr_name {
+                    Some(BuilderAttr::Ok(attr_name)) => quote! {
+                        fn #attr_name(&mut self, #attr_name: #inner_type) -> &mut Self {
+                            self.#name.push(#attr_name);
+                            self
+                        }
+                    },
+                    Some(BuilderAttr::Err(error)) => quote! {
+                        #error
+                    },
+                    None => quote! {},
                 }
             } else {
                 quote! {
