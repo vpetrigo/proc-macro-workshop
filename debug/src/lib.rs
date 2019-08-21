@@ -19,16 +19,20 @@ fn generate_debug_impl(
     let struct_name_string = struct_name.to_string();
 
     if let syn::Data::Struct(syn::DataStruct { ref fields, .. }) = ast.data {
-        let field_idents = fields.iter().map(|field| &field.ident);
-        let field_names = fields
-            .iter()
-            .map(|field| field.ident.as_ref().unwrap().to_string());
+        let field_combine = fields.iter().map(|field| {
+            let ident = &field.ident;
+            let name = ident.as_ref().unwrap().to_string();
+
+            quote! {
+                .field(#name, &self.#ident)
+            }
+        });
 
         return Ok(quote! {
             impl std::fmt::Debug for #struct_name {
                 fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                     fmt.debug_struct(#struct_name_string)
-                      #(.field(#field_names, &self.#field_idents))*
+                      #(#field_combine)*
                        .finish()
                 }
             }
