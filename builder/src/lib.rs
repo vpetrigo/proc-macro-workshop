@@ -130,7 +130,7 @@ fn get_builder_attr(field: &syn::Field) -> Option<BuilderAttr> {
                             .segments
                             .iter()
                             .any(|segment| segment.ident == "builder"),
-                        "Does not have #[builder]"
+                        "Does not have #[builder] definition"
                     );
 
                     if list.nested.len() != 1 {
