@@ -23,9 +23,9 @@ fn generate_debug_impl(
             let ident = &field.ident;
             let name = ident.as_ref().unwrap().to_string();
             match has_debug_attr(field) {
-                Some((true, lstr)) => {
+                Some((true, debug_fmt)) => {
                     quote! {
-                        .field(#name, &format_args!(#lstr, &self.#ident))
+                        .field(#name, &format_args!(#debug_fmt, &self.#ident))
                     }
                 },
                 _ => quote! {
@@ -33,8 +33,6 @@ fn generate_debug_impl(
                 },
             }
         });
-
-        //println!("{:?}", fields);
 
         return Ok(quote! {
             impl std::fmt::Debug for #struct_name {
