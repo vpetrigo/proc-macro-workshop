@@ -8,3 +8,4 @@ rust:
 script:
   - cargo check
   - cargo test -p derive_builder
+  - cargo test -p derive_debug
