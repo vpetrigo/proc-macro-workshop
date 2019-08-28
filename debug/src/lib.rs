@@ -7,7 +7,8 @@ use syn::{parse_macro_input, parse_quote};
 #[proc_macro_derive(CustomDebug, attributes(debug))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as syn::DeriveInput);
-    let debug_impl = generate_debug_impl(&ast).unwrap();
+    let generics = add_trait_bound(&ast.generics);
+    let debug_impl = generate_debug_impl(&ast, &generics).unwrap();
 
     debug_impl.into()
 }
