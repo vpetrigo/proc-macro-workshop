@@ -13,6 +13,18 @@ pub fn derive(input: TokenStream) -> TokenStream {
     debug_impl.into()
 }
 
+fn add_trait_bound(generics: &syn::Generics) -> syn::Generics {
+    let mut cloned_generics = generics.clone();
+
+    for param in &mut cloned_generics.params {
+        if let syn::GenericParam::Type(type_param) = param {
+            type_param.bounds.push(parse_quote!(std::fmt::Debug));
+        }
+    }
+
+    cloned_generics
+}
+
 fn generate_debug_impl(
     ast: &syn::DeriveInput,
 ) -> std::result::Result<proc_macro2::TokenStream, syn::Error> {
