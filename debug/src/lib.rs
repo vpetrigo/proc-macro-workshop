@@ -27,9 +27,11 @@ fn add_trait_bound(generics: &syn::Generics) -> syn::Generics {
 
 fn generate_debug_impl(
     ast: &syn::DeriveInput,
+    generics: &syn::Generics,
 ) -> std::result::Result<proc_macro2::TokenStream, syn::Error> {
     let struct_name = &ast.ident;
     let struct_name_string = struct_name.to_string();
+    let (impl_generics, ty_generics, where_clauses) = generics.split_for_impl();
 
     if let syn::Data::Struct(syn::DataStruct { ref fields, .. }) = ast.data {
         let field_combine = fields.iter().map(|field| {
