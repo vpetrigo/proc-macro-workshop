@@ -42,7 +42,7 @@ fn generate_debug_impl(
                     quote! {
                         .field(#name, &format_args!(#debug_fmt, &self.#ident))
                     }
-                },
+                }
                 _ => quote! {
                     .field(#name, &self.#ident)
                 },
