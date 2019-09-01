@@ -50,7 +50,7 @@ fn generate_debug_impl(
         });
 
         return Ok(quote! {
-            impl std::fmt::Debug for #struct_name {
+            impl #impl_generics std::fmt::Debug for #struct_name #ty_generics #where_clauses {
                 fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                     fmt.debug_struct(#struct_name_string)
                       #(#field_combine)*
