@@ -6,17 +6,10 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust_version: [stable, beta, nightly]
 
     steps:
     - uses: actions/checkout@v1
     - name: Build Rust ${{ matrix.rust_version }}
       run: cargo build --verbose
-      with:
-        version: ${{ matrix.rust_version }}
     - name: Run tests
       run: cargo test --verbose
-      with:
-        version: ${{ matrix.rust_version }}
