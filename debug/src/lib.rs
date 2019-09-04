@@ -12,7 +12,11 @@ pub fn derive(input: TokenStream) -> TokenStream {
     debug_impl.into()
 }
 
-fn add_trait_bound(generics: &syn::Generics) -> syn::Generics {
+fn add_trait_bound(
+    generics: &syn::Generics,
+    ty: syn::TypeParamBound,
+    pred: impl Fn(&syn::TypeParam) -> bool,
+) -> syn::Generics {
     let mut cloned_generics = generics.clone();
 
     for param in &mut cloned_generics.params {
