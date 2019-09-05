@@ -7,8 +7,7 @@ use syn::{parse_macro_input, parse_quote};
 #[proc_macro_derive(CustomDebug, attributes(debug))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as syn::DeriveInput);
-    let generics = add_trait_bound(&ast.generics);
-    let debug_impl = generate_debug_impl(&ast, &generics).unwrap();
+    let debug_impl = generate_debug_impl(&ast).unwrap();
 
     debug_impl.into()
 }
@@ -26,9 +25,9 @@ fn add_trait_bound(generics: &syn::Generics) -> syn::Generics {
 }
 
 fn generate_debug_impl(
-    ast: &syn::DeriveInput,
-    generics: &syn::Generics,
+    ast: &syn::DeriveInput
 ) -> std::result::Result<proc_macro2::TokenStream, syn::Error> {
+    let generics = add_trait_bound(&ast.generics);
     let struct_name = &ast.ident;
     let struct_name_string = struct_name.to_string();
     let (impl_generics, ty_generics, where_clauses) = generics.split_for_impl();
@@ -48,6 +47,8 @@ fn generate_debug_impl(
                 },
             }
         });
+
+
 
         return Ok(quote! {
             impl #impl_generics std::fmt::Debug for #struct_name #ty_generics #where_clauses {
@@ -79,4 +80,18 @@ fn has_debug_attr(field: &syn::Field) -> Option<(bool, String)> {
     }
 
     None
+}
+
+fn has_inner_phantom(field: &syn::Field) -> bool {
+    if let syn::Type::Path(syn::TypePath {
+        ref path, ..
+    }) = field.ty {
+        for segment in &path.segments {
+            if segment.ident == "PhantomData" {
+                return true;
+            }
+        }
+    }
+
+    false
 }
