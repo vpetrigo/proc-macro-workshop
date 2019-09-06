@@ -21,7 +21,9 @@ fn add_trait_bound(
 
     for param in &mut cloned_generics.params {
         if let syn::GenericParam::Type(type_param) = param {
-            type_param.bounds.push(parse_quote!(std::fmt::Debug));
+            if pred(type_param) {
+                type_param.bounds.push(ty.clone());
+            }
         }
     }
 
