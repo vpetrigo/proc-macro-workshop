@@ -30,6 +30,29 @@ fn add_trait_bound(
     cloned_generics
 }
 
+fn extract_phantom_data_ty(field: &syn::Field) -> Option<syn::Ident> {
+    if let syn::Type::Path(syn::TypePath { ref path, .. }) = field.ty {
+        let first_segment = &path.segments[0];
+
+        if first_segment.ident == "PhantomData" {
+            if let syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+                ref args,
+                ..
+            }) = first_segment.arguments
+            {
+                if let syn::GenericArgument::Type(syn::Type::Path(syn::TypePath {
+                    ref path, ..
+                })) = args[0]
+                {
+                    return Some(path.segments[0].ident.clone());
+                }
+            }
+        }
+    }
+
+    None
+}
+
 fn generate_debug_impl(
     ast: &syn::DeriveInput
 ) -> std::result::Result<proc_macro2::TokenStream, syn::Error> {
