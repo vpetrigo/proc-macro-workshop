@@ -2,21 +2,36 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::parse_macro_input;
+use syn::{parse_macro_input, parse_quote};
 
 #[proc_macro_derive(CustomDebug, attributes(debug))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as syn::DeriveInput);
-    let debug_impl = generate_debug_impl(&ast).unwrap();
+    let generics = add_trait_bound(&ast.generics);
+    let debug_impl = generate_debug_impl(&ast, &generics).unwrap();
 
     debug_impl.into()
 }
 
+fn add_trait_bound(generics: &syn::Generics) -> syn::Generics {
+    let mut cloned_generics = generics.clone();
+
+    for param in &mut cloned_generics.params {
+        if let syn::GenericParam::Type(type_param) = param {
+            type_param.bounds.push(parse_quote!(std::fmt::Debug));
+        }
+    }
+
+    cloned_generics
+}
+
 fn generate_debug_impl(
     ast: &syn::DeriveInput,
+    generics: &syn::Generics,
 ) -> std::result::Result<proc_macro2::TokenStream, syn::Error> {
     let struct_name = &ast.ident;
     let struct_name_string = struct_name.to_string();
+    let (impl_generics, ty_generics, where_clauses) = generics.split_for_impl();
 
     if let syn::Data::Struct(syn::DataStruct { ref fields, .. }) = ast.data {
         let field_combine = fields.iter().map(|field| {
@@ -27,7 +42,7 @@ fn generate_debug_impl(
                     quote! {
                         .field(#name, &format_args!(#debug_fmt, &self.#ident))
                     }
-                },
+                }
                 _ => quote! {
                     .field(#name, &self.#ident)
                 },
@@ -35,7 +50,7 @@ fn generate_debug_impl(
         });
 
         return Ok(quote! {
-            impl std::fmt::Debug for #struct_name {
+            impl #impl_generics std::fmt::Debug for #struct_name #ty_generics #where_clauses {
                 fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
                     fmt.debug_struct(#struct_name_string)
                       #(#field_combine)*
