@@ -54,7 +54,7 @@ fn extract_phantom_data_ty(field: &syn::Field) -> Option<syn::Ident> {
 }
 
 fn generate_debug_impl(
-    ast: &syn::DeriveInput
+    ast: &syn::DeriveInput,
 ) -> std::result::Result<proc_macro2::TokenStream, syn::Error> {
     let generics = add_trait_bound(&ast.generics);
     let struct_name = &ast.ident;
