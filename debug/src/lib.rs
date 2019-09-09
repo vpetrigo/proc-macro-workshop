@@ -56,10 +56,8 @@ fn extract_phantom_data_ty(field: &syn::Field) -> Option<syn::Ident> {
 fn generate_debug_impl(
     ast: &syn::DeriveInput,
 ) -> std::result::Result<proc_macro2::TokenStream, syn::Error> {
-    let generics = add_trait_bound(&ast.generics);
     let struct_name = &ast.ident;
     let struct_name_string = struct_name.to_string();
-    let (impl_generics, ty_generics, where_clauses) = generics.split_for_impl();
 
     if let syn::Data::Struct(syn::DataStruct { ref fields, .. }) = ast.data {
         let field_combine = fields.iter().map(|field| {
