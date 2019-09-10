@@ -60,6 +60,22 @@ fn generate_debug_impl(
     let struct_name_string = struct_name.to_string();
 
     if let syn::Data::Struct(syn::DataStruct { ref fields, .. }) = ast.data {
+        let non_debug_ty = fields
+            .iter()
+            .map(|field| extract_phantom_data_ty(field))
+            .filter(|x| x.is_some())
+            .map(|x| x.unwrap())
+            .collect::<Vec<_>>();
+        let non_debug_pred = |x: &syn::TypeParam| {
+            !non_debug_ty
+                .iter()
+                .any(|val| val.to_string() == x.ident.to_string())
+        };
+        let generics =
+            add_trait_bound(&ast.generics, parse_quote!(std::fmt::Debug), non_debug_pred);
+        let (impl_generics, ty_generics, where_clauses) = generics.split_for_impl();
+        println!("{:?}", non_debug_ty);
+
         let field_combine = fields.iter().map(|field| {
             let ident = &field.ident;
             let name = ident.as_ref().unwrap().to_string();
