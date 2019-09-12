@@ -122,17 +122,3 @@ fn has_debug_attr(field: &syn::Field) -> Option<(bool, String)> {
 
     None
 }
-
-fn has_inner_phantom(field: &syn::Field) -> bool {
-    if let syn::Type::Path(syn::TypePath {
-        ref path, ..
-    }) = field.ty {
-        for segment in &path.segments {
-            if segment.ident == "PhantomData" {
-                return true;
-            }
-        }
-    }
-
-    false
-}
