@@ -74,7 +74,6 @@ fn generate_debug_impl(
         let generics =
             add_trait_bound(&ast.generics, parse_quote!(std::fmt::Debug), non_debug_pred);
         let (impl_generics, ty_generics, where_clauses) = generics.split_for_impl();
-        println!("{:?}", non_debug_ty);
 
         let field_combine = fields.iter().map(|field| {
             let ident = &field.ident;
