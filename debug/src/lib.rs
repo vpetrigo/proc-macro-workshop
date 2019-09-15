@@ -47,6 +47,22 @@ fn extract_phantom_data_ty(field: &syn::Field) -> Option<syn::Ident> {
                     return Some(path.segments[0].ident.clone());
                 }
             }
+        } else if !first_segment.arguments.is_empty() {
+            if let syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+                ref args,
+                ..
+            }) = first_segment.arguments
+            {
+                if let syn::GenericArgument::Type(syn::Type::Path(syn::TypePath {
+                    ref path, ..
+                })) = args[0]
+                {
+                    if path.segments.len() > 1
+                    {
+                        return Some(path.segments[0].ident.clone());
+                    }
+                }
+            }
         }
     }
 
