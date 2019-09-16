@@ -30,7 +30,34 @@ fn add_trait_bound(
     cloned_generics
 }
 
-fn extract_phantom_data_ty(field: &syn::Field) -> Option<syn::Ident> {
+fn add_where_bound(generics: &syn::Generics, assoc_types: Vec<&String>) -> syn::Generics {
+    let mut cloned_generics = generics.clone();
+
+    if assoc_types.len() > 0 {
+        cloned_generics.make_where_clause();
+
+        for assoc_type in assoc_types {
+            let ty: syn::Type = syn::parse_str(assoc_type.as_str()).unwrap();
+            let dbg = syn::parse_quote! {#ty: std::fmt::Debug};
+
+            cloned_generics
+                .where_clause
+                .as_mut()
+                .unwrap()
+                .predicates
+                .push(dbg);
+        }
+    }
+
+    cloned_generics
+}
+
+enum DataTy {
+    Phantom(syn::Ident),
+    CompositeTy(syn::Ident, String),
+}
+
+fn extract_phantom_data_ty(field: &syn::Field) -> Option<DataTy> {
     if let syn::Type::Path(syn::TypePath { ref path, .. }) = field.ty {
         let first_segment = &path.segments[0];
 
@@ -44,7 +71,7 @@ fn extract_phantom_data_ty(field: &syn::Field) -> Option<syn::Ident> {
                     ref path, ..
                 })) = args[0]
                 {
-                    return Some(path.segments[0].ident.clone());
+                    return Some(DataTy::Phantom(path.segments[0].ident.clone()));
                 }
             }
         } else if !first_segment.arguments.is_empty() {
@@ -57,9 +84,15 @@ fn extract_phantom_data_ty(field: &syn::Field) -> Option<syn::Ident> {
                     ref path, ..
                 })) = args[0]
                 {
-                    if path.segments.len() > 1
-                    {
-                        return Some(path.segments[0].ident.clone());
+                    if path.segments.len() > 1 {
+                        let ty_str = path
+                            .segments
+                            .iter()
+                            .map(|segment| segment.ident.to_string())
+                            .collect::<std::vec::Vec<_>>()
+                            .join("::");
+
+                        return Some(DataTy::CompositeTy(path.segments[0].ident.clone(), ty_str));
                     }
                 }
             }
@@ -83,12 +116,31 @@ fn generate_debug_impl(
             .map(|x| x.unwrap())
             .collect::<Vec<_>>();
         let non_debug_pred = |x: &syn::TypeParam| {
-            !non_debug_ty
-                .iter()
-                .any(|val| val.to_string() == x.ident.to_string())
+            !non_debug_ty.iter().any(|val| {
+                let ident = match val {
+                    DataTy::Phantom(val) => val,
+                    DataTy::CompositeTy(val, _) => val,
+                };
+
+                ident.to_string() == x.ident.to_string()
+            })
         };
+        let assoc_ty = non_debug_ty
+            .iter()
+            .map(|ty| {
+                if let DataTy::CompositeTy(_, a_ty) = ty {
+                    return Some(a_ty);
+                }
+
+                None
+            })
+            .filter(|elem| elem.is_some())
+            .map(|elem| elem.unwrap())
+            .collect::<Vec<_>>();
+
         let generics =
             add_trait_bound(&ast.generics, parse_quote!(std::fmt::Debug), non_debug_pred);
+        let generics = add_where_bound(&generics, assoc_ty);
         let (impl_generics, ty_generics, where_clauses) = generics.split_for_impl();
 
         let field_combine = fields.iter().map(|field| {
